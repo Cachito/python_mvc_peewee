@@ -13,6 +13,56 @@ class Controller:
         self.model = model
         self.view = view
 
+    def create_db(self):
+        """
+        crea la base de datos carro_maier_peewee
+        """
+        try:
+            self.model.create_db()
+            self.view.salta_violeta("Carro-Maier", "Base de datos carro_maier_peewee creada con éxito")
+
+        except Exception as e:
+            self.view.salta_violeta("Error Carro-Maier", f"error al intentar base: {str(e)}")
+
+    def create_tables(self):
+        """
+        crea las tablas
+        - noticias
+        - medios
+        - secciones
+        """
+        try:
+            self.model.create_tables()
+            self.view.salta_violeta(
+                "Carro-Maier", "Tablas `Noticias`, `Medios` y `Secciones` creadas con éxito.")
+
+        except Exception as e:
+            self.view.salta_violeta(
+                "Error Carro-Maier", f"error al intentar crear tablas: {str(e)}")
+
+    def get_medios(self):
+        """
+        devuelve una lista con los medios en
+        base de datos
+        """
+        try:
+            return self.model.get_medios()
+
+        except Exception as e:
+            self.view.salta_violeta(
+                "Error Carro-Maier", f"error al intentar obtener medios: {str(e)}")
+
+    def get_secciones(self, id_medio):
+        """
+        devuelve una lista con las secciones en
+        base de datos según el id_medio indicado
+        """
+        try:
+            return self.model.get_secciones(id_medio)
+
+        except Exception as e:
+            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener secciones: {str(e)}")
+
     def get_noticia(self, search_id):
         """
         Args:
@@ -40,52 +90,6 @@ class Controller:
 
         except Exception as e:
             self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener noticias: {str(e)}")
-
-    def create_db(self):
-        """
-        crea la base de datos carro_maier
-        """
-        try:
-            self.model.create_db()
-            self.view.salta_violeta("Carro-Maier", "Base de datos carro_meier creada con éxito")
-        except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar crear base de datos: {str(e)}")
-
-    def create_tables(self):
-        """
-        crea las tablas
-        - noticias
-        - medios
-        - secciones
-        """
-        try:
-            self.model.create_tables()
-            self.view.salta_violeta("Carro-Maier", "Tablas `Noticias`, `Medios` y `Secciones` creadas con éxito.")
-
-        except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar crear tablas: {str(e)}")
-
-    def get_medios(self):
-        """
-        devuelve una lista con los medios en
-        base de datos
-        """
-        try:
-            return self.model.get_medios()
-
-        except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener medios: {str(e)}")
-
-    def get_secciones(self, id_medio):
-        """
-        devuelve una lista con las secciones en
-        base de datos según el id_medio indicado
-        """
-        try:
-            return self.model.get_secciones(id_medio)
-
-        except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener secciones: {str(e)}")
 
     def save_data(self, noticia):
         """

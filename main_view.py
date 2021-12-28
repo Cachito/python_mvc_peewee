@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from modulos.clases import *
-from modulos.model import Model
+from modulos.cmp_model import *
 from modulos.controller import Controller
 import modulos.constant as constants
 class Ui_main_view(object):
@@ -235,15 +235,13 @@ class Ui_main_view(object):
         self.actionAcerca_de.triggered.connect(self.about)
         self.salir.triggered.connect(self.end_program)
 
-        model = Model()
+        model = CmpModel()
         self.controller = Controller(model, self)
 
         self.retranslateUi(main_view)
         QtCore.QMetaObject.connectSlotsByName(main_view)
 
-        self.create_db()
-        self.create_tables()
-        self.load_medios()
+        self.setup_program()
         self.refresh()
         self.clear_data()
 
@@ -292,6 +290,96 @@ class Ui_main_view(object):
         noticia_id = self.tw_noticias.item(index, 0).text()
         self.controller.get_noticia(noticia_id)
 
+    def create_db(self):
+        """
+        botón crear base evento click
+        """
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self.controller.create_db()
+        self.clear_data()
+        self.clear_grid()
+        self.clear_combos()
+        QApplication.restoreOverrideCursor()
+
+    def create_tables(self):
+        """
+        botón crear tablas evento click
+        """
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self.controller.create_tables()
+        self.load_medios()
+        QApplication.restoreOverrideCursor()
+        
+    def setup_program(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.controller.create_db()
+        self.controller.create_tables()
+        self.clear_data()
+        self.clear_grid()
+        self.clear_combos()
+        self.load_medios()
+
+        QApplication.restoreOverrideCursor()
+
+    def clear_data(self):
+        """
+        limpia la pantalla
+        """
+        self.nota_id = 0
+        date = QDate.currentDate()
+        self.de_fecha.setDate(date)
+        self.cmb_medios.setCurrentIndex(0)
+        self.txt_id_search.setText("")
+        self.txt_titulo.setText("")
+        self.txt_cuerpo.setText("")
+
+    def clear_grid(self):
+        """
+        vacía la grilla
+        """
+        self.tw_noticias.setRowCount(0)
+
+    def clear_combos(self):
+        """
+        vacía la combos
+        """
+        self.cmb_medios.clear()
+        self.cmb_secciones.clear()
+
+    def load_medios(self):
+        """
+        carga el combo de medios
+        """
+        try:
+            medios = self.controller.get_medios()
+            for m in medios:
+                self.cmb_medios.addItem(f"{m.Descripcion} - ({m.Id})")
+        except:
+            pass
+
+    def load_secciones(self):
+        """
+        carga el combo de secciones
+        según el medio elegido
+        """
+        try:
+            self.cmb_secciones.clear()
+
+            medio = self.cmb_medios.currentText()
+            inicio = medio.find('- (') + 3
+            fin = medio.find(')')
+
+            id_medio = int(medio[inicio : fin : 1])
+
+            secciones = self.controller.get_secciones(id_medio)
+
+            for s in secciones:
+                self.cmb_secciones.addItem(f"{s.Descripcion} - ({s.Id})")
+
+        except:
+            pass
+
     def set_noticia(self, noticia):
         """
         carga una noticia en pantalla
@@ -337,51 +425,6 @@ class Ui_main_view(object):
 
         self.controller.save_data(noti)
 
-    def create_db(self):
-        """
-        botón crear base evento click
-        """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        self.controller.create_db()
-        self.clear_data()
-        self.clear_grid()
-        self.clear_combos()
-        QApplication.restoreOverrideCursor()
-
-    def create_tables(self):
-        """
-        botón crear tablas evento click
-        """
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        self.controller.create_tables()
-        self.load_medios()
-        QApplication.restoreOverrideCursor()
-
-    def clear_grid(self):
-        """
-        vacía la grilla
-        """
-        self.tw_noticias.setRowCount(0)
-
-    def clear_combos(self):
-        """
-        vacía la combos
-        """
-        self.cmb_medios.clear()
-        self.cmb_secciones.clear()
-
-    def clear_data(self):
-        """
-        limpia la pantalla
-        """
-        self.nota_id = 0
-        date = QDate.currentDate()
-        self.de_fecha.setDate(date)
-        self.cmb_medios.setCurrentIndex(0)
-        self.txt_id_search.setText("")
-        self.txt_titulo.setText("")
-        self.txt_cuerpo.setText("")
-
     def refresh(self):
         """
         botón refresh evento click
@@ -402,38 +445,6 @@ class Ui_main_view(object):
 
                     self.tw_noticias.setItem(row, col, QtWidgets.QTableWidgetItem(n[col]))
                 row += 1
-        except:
-            pass
-
-    def load_medios(self):
-        """
-        carga el combo de medios
-        """
-        try:
-            data = self.controller.get_medios()
-            for d in data:
-                self.cmb_medios.addItem(f"{d[1]} - ({d[0]})")
-        except:
-            pass
-
-    def load_secciones(self):
-        """
-        carga el combo de secciones
-        según el medio elegido
-        """
-        try:
-            self.cmb_secciones.clear()
-
-            medio = self.cmb_medios.currentText()
-            inicio = medio.find('- (') + 3
-            fin = medio.find(')')
-
-            id_medio = int(medio[inicio : fin : 1])
-
-            data = self.controller.get_secciones(id_medio)
-
-            for d in data:
-                self.cmb_secciones.addItem(f"{d[1]} - ({d[0]})")
         except:
             pass
 
