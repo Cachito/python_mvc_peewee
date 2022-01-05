@@ -22,6 +22,8 @@ class Ui_main_view(object):
     """
     def setupUi(self, main_view):
         self.nota_id = 0
+        self.medio_id = 0
+        self.seccion_id = 0
 
         main_view.setObjectName("main_view")
         main_view.resize(500, 641)
@@ -73,7 +75,7 @@ class Ui_main_view(object):
         self.btn_tabla.setIconSize(QtCore.QSize(32, 32))
         self.btn_tabla.setAutoRaise(False)
         self.btn_tabla.setObjectName("btn_tabla")
-        self.btn_tabla.clicked.connect(self.create_tables)
+        self.btn_tabla.clicked.connect(self.populate_tables)
         # botón noticia nueva
         self.btn_nuevo = QtWidgets.QToolButton(self.tool_frame)
         self.btn_nuevo.setGeometry(QtCore.QRect(130, 10, 51, 41))
@@ -186,9 +188,9 @@ class Ui_main_view(object):
         self.txt_cuerpo.setObjectName("txt_cuerpo")
         # tabla (widget)
         self.tw_noticias = QtWidgets.QTableWidget(self.centralwidget)
-        self.tw_noticias.setGeometry(QtCore.QRect(10, 420, 481, 192))
+        self.tw_noticias.setGeometry(QtCore.QRect(10, 420, 481, 182))
         self.tw_noticias.setObjectName("tw_noticias")
-        self.tw_noticias.setColumnCount(6)
+        self.tw_noticias.setColumnCount(8)
         self.tw_noticias.setRowCount(0)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -208,6 +210,14 @@ class Ui_main_view(object):
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.tw_noticias.setHorizontalHeaderItem(5, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tw_noticias.setHorizontalHeaderItem(6, item)
+        self.tw_noticias.setColumnHidden(6, True)
+        item = QtWidgets.QTableWidgetItem()
+        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tw_noticias.setHorizontalHeaderItem(7, item)
+        self.tw_noticias.setColumnHidden(7, True)
         self.tw_noticias.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.tw_noticias.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.tw_noticias.setColumnWidth(constants.ID_NOTICIA, 10)
@@ -222,9 +232,9 @@ class Ui_main_view(object):
         self.menuArchivo = QtWidgets.QMenu(self.menubar)
         self.menuArchivo.setObjectName("menuArchivo")
         main_view.setMenuBar(self.menubar)
-        self.statusbar = QtWidgets.QStatusBar(main_view)
-        self.statusbar.setObjectName("statusbar")
-        main_view.setStatusBar(self.statusbar)
+        self.status_bar = QtWidgets.QStatusBar(main_view)
+        self.status_bar.setObjectName("status_bar")
+        main_view.setStatusBar(self.status_bar)
         self.actionAcerca_de = QtWidgets.QAction(main_view)
         self.actionAcerca_de.setObjectName("actionAcerca_de")
         self.menuArchivo.addAction(self.actionAcerca_de)
@@ -241,15 +251,11 @@ class Ui_main_view(object):
         self.retranslateUi(main_view)
         QtCore.QMetaObject.connectSlotsByName(main_view)
 
-        self.setup_program()
-        self.refresh()
-        self.clear_data()
-
     def retranslateUi(self, main_view):
         _translate = QtCore.QCoreApplication.translate
         main_view.setWindowTitle(_translate("main_view", "Cargador de Noticias"))
-        self.btn_base.setToolTip(_translate("main_view", "Crear base de datos."))
-        self.btn_tabla.setToolTip(_translate("main_view", "Crear tablas Noticias, Medios y Secciones."))
+        self.btn_base.setToolTip(_translate("main_view", "Crear base de datos y tablas."))
+        self.btn_tabla.setToolTip(_translate("main_view", "Inicializar tablas Medios y Secciones."))
         self.btn_nuevo.setToolTip(_translate("main_view", "Noticia nueva."))
         self.btn_guardar.setToolTip(_translate("main_view", "Guardar noticia."))
         self.btn_eliminar.setToolTip(_translate("main_view", "Eliminar noticia."))
@@ -270,14 +276,21 @@ class Ui_main_view(object):
         item = self.tw_noticias.horizontalHeaderItem(2)
         item.setText(_translate("main_view", "Medio"))
         item = self.tw_noticias.horizontalHeaderItem(3)
-        item.setText(_translate("main_view", "Seccion"))
+        item.setText(_translate("main_view", "Sección"))
         item = self.tw_noticias.horizontalHeaderItem(4)
         item.setText(_translate("main_view", "Título"))
         item = self.tw_noticias.horizontalHeaderItem(5)
         item.setText(_translate("main_view", "Cuerpo"))
+        item = self.tw_noticias.horizontalHeaderItem(6)
+        item.setText(_translate("main_view", "IdMedio"))
+        item = self.tw_noticias.horizontalHeaderItem(7)
+        item.setText(_translate("main_view", "IdSeccion"))
         self.menuArchivo.setTitle(_translate("main_view", "Archivo"))
         self.actionAcerca_de.setText(_translate("main_view", "Acerca de..."))
         self.salir.setText(_translate("main_view", "Salir"))
+
+    def show_status(self, texto):
+        self.status_bar.showMessage(texto, 3000)
 
     def end_program(self):
         sys.exit()
@@ -288,33 +301,40 @@ class Ui_main_view(object):
         de la grilla (tablewidget)
         """
         noticia_id = self.tw_noticias.item(index, 0).text()
-        self.controller.get_noticia(noticia_id)
+        self.controller.get_noticia(int(noticia_id))
 
     def create_db(self):
         """
         botón crear base evento click
         """
+        self.show_status("Creando base de datos. Por favor espere...")
         QApplication.setOverrideCursor(Qt.WaitCursor)
+
         self.controller.create_db()
         self.clear_data()
         self.clear_grid()
         self.clear_combos()
+
         QApplication.restoreOverrideCursor()
 
-    def create_tables(self):
+    def populate_tables(self):
         """
-        botón crear tablas evento click
+        botón inicializar tablas evento click
         """
+        self.show_status("Inicializando tablas. Por favor espere...")
         QApplication.setOverrideCursor(Qt.WaitCursor)
-        self.controller.create_tables()
+
+        self.controller.populate_tables()
+        self.clear_combos()
         self.load_medios()
+
         QApplication.restoreOverrideCursor()
-        
+
     def setup_program(self):
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
         self.controller.create_db()
-        self.controller.create_tables()
+        self.controller.populate_tables()
         self.clear_data()
         self.clear_grid()
         self.clear_combos()
@@ -327,6 +347,8 @@ class Ui_main_view(object):
         limpia la pantalla
         """
         self.nota_id = 0
+        self.medio_id = 0
+        self.seccion_id = 0
         date = QDate.currentDate()
         self.de_fecha.setDate(date)
         self.cmb_medios.setCurrentIndex(0)
@@ -355,8 +377,9 @@ class Ui_main_view(object):
             medios = self.controller.get_medios()
             for m in medios:
                 self.cmb_medios.addItem(f"{m.Descripcion} - ({m.Id})")
-        except:
-            pass
+
+        except Exception as e:
+            self.salta_violeta("Patrón MVC + PyQt5", f"Error al cargar medios (main_view): {str(e)}")
 
     def load_secciones(self):
         """
@@ -377,8 +400,8 @@ class Ui_main_view(object):
             for s in secciones:
                 self.cmb_secciones.addItem(f"{s.Descripcion} - ({s.Id})")
 
-        except:
-            pass
+        except Exception as e:
+            self.salta_violeta("Patrón MVC + PyQt5", f"Error al cargar secciones (main_view): {str(e)}")
 
     def set_noticia(self, noticia):
         """
@@ -387,11 +410,13 @@ class Ui_main_view(object):
         self.clear_data()
 
         self.nota_id = noticia[constants.ID_NOTICIA]
+        self.medio_id = noticia[constants.ID_MEDIO]
+        self.seccion_id = noticia[constants.ID_SECCION]
         qdate = QtCore.QDate.fromString(noticia[constants.FECHA], "dd/MM/yyyy")
         self.de_fecha.setDate(qdate)
         self.de_fecha.show()
-        self.cmb_medios.setCurrentText(noticia[constants.MEDIO])
-        self.cmb_secciones.setCurrentText(noticia[constants.SECCION])
+        self.cmb_medios.setCurrentText(noticia[constants.ID_MEDIO])
+        self.cmb_secciones.setCurrentText(noticia[constants.ID_SECCION])
         self.txt_titulo.setText(noticia[constants.TITULO])
         self.txt_cuerpo.setText(noticia[constants.CUERPO])
 
@@ -416,12 +441,11 @@ class Ui_main_view(object):
         inicio = seccion.find('- (') + 3
         fin = seccion.find(')')
         id_seccion = int(seccion[inicio : fin : 1])
-
         titulo = self.txt_titulo.text()
 
         cuerpo = self.txt_cuerpo.toPlainText()
 
-        noti = Noticia(self.nota_id, fecha, id_medio, id_seccion, titulo, cuerpo)
+        noti = self.nota_id, fecha, id_medio, id_seccion, titulo, cuerpo
 
         self.controller.save_data(noti)
 
@@ -430,23 +454,29 @@ class Ui_main_view(object):
         botón refresh evento click
         """
         try:
-            #'Id', 'Fecha', 'Medio', 'Sección', 'Título', 'Cuerpo'
+            self.clear_data()
+            self.clear_combos()
+            self.load_medios()
+
+            #'Id', 'Fecha', 'Medio', 'Sección', 'Título', 'Cuerpo', 'IdMedio', 'IdSeccion'
             noticias = self.controller.get_noticias()
+
             row = 0
             self.tw_noticias.setRowCount(len(noticias))
 
-            cols = 6
+            cols = 7
             for n in noticias:
-                for col in range(0, cols):
-                    #print(row, col, n[col])
-                    item = QtWidgets.QTableWidgetItem(n[col])
-                    if(col < 2):
-                        item.setTextAlignment(QtCore.Qt.AlignRight) # esto no funciona
-
+                for col in range(0, cols + 1):
+                    #item = QtWidgets.QTableWidgetItem(n[col])
+                    #if(col < 2):
+                    #    item.setTextAlignment(QtCore.Qt.AlignRight) # esto no funciona
+#
                     self.tw_noticias.setItem(row, col, QtWidgets.QTableWidgetItem(n[col]))
+
                 row += 1
-        except:
-            pass
+
+        except Exception as e:
+            self.salta_violeta("Patrón MVC + PyQt5", f"Error en refresh (main_view) {str(e)}")
 
     def buscar(self):
         """
@@ -483,4 +513,5 @@ if __name__ == "__main__":
     ui = Ui_main_view()
     ui.setupUi(main_view)
     main_view.show()
+    ui.refresh()
     sys.exit(app.exec_())

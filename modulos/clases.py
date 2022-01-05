@@ -3,8 +3,6 @@ módulo de clases.
 """
 
 from peewee import *
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
 
 cm_pw_db = MySQLDatabase('carro_maier_peewee', user='root', passwd='')
 
@@ -29,6 +27,7 @@ class Medio(MySQLModel):
         Database = cm_pw_db
         table_name = "Medios"
 
+    Id = IntegerField(primary_key=True, unique=True)
     Descripcion = FixedCharField(max_length=128)
 
 class Seccion(MySQLModel):
@@ -43,7 +42,10 @@ class Seccion(MySQLModel):
         Database = cm_pw_db
         table_name = "Secciones"
 
-    IdMedio = ForeignKeyField(Medio, backref='Medios')
+    Id = IntegerField(primary_key=True, unique=True)
+    #IdMedio = ForeignKeyField(Medio, backref='Medios', field="IdMedio", to_field="Id")
+    #IdMedio = ForeignKeyField(column_name = "IdMedio", model = Medio)
+    Medio = ForeignKeyField(Medio, backref = 'Medios')
     Descripcion = FixedCharField(max_length=128)
 
 class Noticia(MySQLModel):
@@ -57,16 +59,24 @@ class Noticia(MySQLModel):
         Database = cm_pw_db
         table_name = "Noticias"
 
+    Id =  IntegerField(primary_key=True, unique=True, constraints=[SQL('AUTO_INCREMENT')]) #PrimaryKeyField()
     Fecha = DateField()
-    IdMedio = ForeignKeyField(Medio, backref='Medios')
-    IdSeccion = ForeignKeyField(Seccion, backref='Secciones')
+    #IdMedio = ForeignKeyField(Medio, backref='Medios', field="IdMedio", to_field="Id")
+    #IdMedio = ForeignKeyField(column_name = "IdMedio", model = Medio)
+    Medio = ForeignKeyField(Medio, backref = 'Medios')
+    #IdSeccion = ForeignKeyField(Seccion, backref='Secciones', field="IdSeccion", to_field="Id")
+    #IdSeccion = ForeignKeyField(column_name = "IdSeccion", model = Seccion)
+    Seccion = ForeignKeyField(Seccion, backref = 'Secciones')
     Titulo = FixedCharField(max_length=128)
     Cuerpo = CharField()
 
-    #def __init__(self, id_nota, fecha, id_medio, id_seccion, titulo, cuerpo):
-    #    self.id = id_nota
-    #    self.Fecha = fecha
-    #    self.IdMedio = id_medio
-    #    self.IdSeccion = id_seccion
-    #    self.Titulo = titulo
-    #    self.Cuerpo = cuerpo
+class NoticiaDto:
+    def __init__(self, id_nota, fecha, id_medio, id_seccion, titulo, cuerpo, medio, seccion):
+        self.id_nota = id_nota
+        self.fecha = fecha
+        self.id_medio = id_medio
+        self.id_seccion = id_seccion
+        self.titulo = titulo
+        self.cuerpo = cuerpo
+        self.medio = medio
+        self.seccion = seccion

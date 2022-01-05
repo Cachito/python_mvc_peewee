@@ -4,7 +4,7 @@ Módulo model.py
 import re
 import pymysql
 import peewee
-import mysql.connector
+import modulos.constant as constants
 from modulos.clases import *
 
 class CmpModel:
@@ -20,19 +20,17 @@ class CmpModel:
         - por esto uso pymysql
         """
         db_conn = pymysql.connect(host='localhost', user='root', password='')
+        sql_drop = "DROP DATABASE IF EXISTS carro_maier_peewee"
+        sql_create = "CREATE DATABASE carro_maier_peewee"
 
         try:
-            sql_drop = "DROP DATABASE IF EXISTS carro_maier_peewee"
-            sql_create = "CREATE DATABASE carro_maier_peewee"
-
             db_conn.cursor().execute(sql_drop)
             db_conn.cursor().execute(sql_create)
 
             db_conn.commit()
 
         except Exception as e:
-            db_conn.rollback()
-            raise Exception(f'Error al crear base de datos carro_maier_peewee: {str(e)}') from e
+            raise Exception(f'Error al crear base de datos (model): {str(e)}') from e
 
         finally:
             db_conn.close()
@@ -44,54 +42,89 @@ class CmpModel:
         - medios
         - secciones
         si existe, la elimina
-        las tablas medios y noticias se cargan con datos
         """
         try:
-            sql_populate_medios = """
-                INSERT INTO Medios(Id, Descripcion)
-                    VALUES
-                        (32, 'Ámbito Financiero'),
-                        (36, 'BAE'),
-                        (299, 'Buenos Aires Herald'),
-                        (38, 'Clarín'),
-                        (221, 'Página 12 Online');
-            """
-
-            sql_populate_secciones = """
-                INSERT INTO Secciones(Id, IdMedio, Descripcion)
-                    VALUES
-                        (145, 32, 'Ámbito Nacional'),
-                        (411, 32, 'Cuerpo Principal'),
-                        (80, 36, 'Política Económica'),
-                        (81, 36, 'BAE inversor'),
-                        (82, 36, 'Empresas & Negocios'),
-                        (415, 299, 'Argentina'),
-                        (422, 299, 'Day by Day'),
-                        (93, 38, 'Sociedad'),
-                        (94, 38, 'Cultura'),
-                        (96, 38, 'Policiales'),
-                        (871, 221, 'Supl. - Cash'),
-                        (136, 221, 'Supl. - Las 12'),
-                        (103, 221, 'Espectáculos');
-            """
-
             cm_pw_db.connect()
 
-            models = (Seccion, Medio, Noticia)
+            models = [Seccion, Medio, Noticia]
             cm_pw_db.drop_tables(models)
             cm_pw_db.create_tables(models)
 
-            cm_pw_db.execute(sql_populate_medios)
-            cm_pw_db.execute(sql_populate_secciones)
-
-            cm_pw_db.commit()
-
         except Exception as e:
-            cm_pw_db.rollback()
-            raise Exception(f"error al crear tablas: {str(e)}") from e
+            raise Exception(f'Error al crear tablas (model): {str(e)}') from e
 
         finally:
             cm_pw_db.close()
+
+    def populate_tables(self):
+        """
+        carga registros las tablas
+        - medios
+        - secciones
+        si existen, los elimina
+        """
+        try:
+            medio = self.get_or_add_medio(32, 'Ámbito Financiero')
+            self.get_or_add_seccion(medio, 145, 'Ámbito Nacional')
+            self.get_or_add_seccion(medio, 411, 'Cuerpo Principal')
+
+            medio = self.get_or_add_medio(36, 'BAE')
+            self.get_or_add_seccion(medio, 80, 'Política Económica')
+            self.get_or_add_seccion(medio, 81, 'BAE inversor')
+            self.get_or_add_seccion(medio, 82, 'Empresas & Negocios')
+
+            medio = self.get_or_add_medio(299, 'Buenos Aires Herald')
+            self.get_or_add_seccion(medio, 415, 'Argentina')
+            self.get_or_add_seccion(medio, 422, 'Day by Day')
+
+            medio = self.get_or_add_medio(38, 'Clarín')
+            self.get_or_add_seccion(medio, 93, 'Sociedad')
+            self.get_or_add_seccion(medio, 94, 'Cultura')
+            self.get_or_add_seccion(medio, 96, 'Policiales')
+
+            medio = self.get_or_add_medio(221, 'Página 12 Online')
+            self.get_or_add_seccion(medio, 871, 'Supl. - Cash')
+            self.get_or_add_seccion(medio, 136, 'Supl. - Las 12')
+            self.get_or_add_seccion(medio, 103, 'Espectáculos')
+
+        except Exception as e:
+            raise Exception(f'Error al insertar registros (model): {str(e)}') from e
+
+    def get_or_add_medio(self, id_medio, descripcion):
+        """
+        intenta obtener un medio
+        """
+        cm_pw_db.connect()
+        medio = Medio()
+
+        try:
+            medio = Medio.select().where(Medio.Id == id_medio).get()
+
+        except peewee.DoesNotExist:
+            medio = Medio.create(Id = id_medio, Descripcion = descripcion)
+
+        finally:
+            cm_pw_db.close()
+
+        return medio
+
+    def get_or_add_seccion(self, medio, id_seccion, descripcion):
+        """
+        intenta obtener una seccion
+        """
+        cm_pw_db.connect()
+        seccion = Seccion()
+
+        try:
+            seccion = Seccion.select().where(Seccion.Id == id_seccion).get()
+
+        except peewee.DoesNotExist:
+            seccion = Seccion.create(Id = id_seccion, Medio = medio, Descripcion = descripcion)
+
+        finally:
+            cm_pw_db.close()
+
+        return seccion
 
     def get_medios(self):
         """
@@ -99,21 +132,20 @@ class CmpModel:
         de la tabla medios
         ordenados por descripción
         """
-        r_list = []
+        m_list = []
 
         try:
             cm_pw_db.connect()
 
-            for m in Medio.select():
-                r_list.append(m)
+            m_list = list(Medio.select().order_by(Medio.Descripcion))
 
         except Exception as e:
-            raise Exception(f'Error al obtener medios: {str(e)}') from e
+            raise Exception(f'Error al obtener medios (model): {str(e)}') from e
 
         finally:
             cm_pw_db.close()
 
-        return r_list
+        return m_list
 
     def get_secciones(self, id_medio):
         """
@@ -122,64 +154,43 @@ class CmpModel:
         según id_medio indicado
         ordenados por descripción
         """
-        r_list = []
+        s_list = []
 
         try:
             cm_pw_db.connect()
 
-            query = Seccion.select().where(Seccion.IdMedio == id_medio)
-            for s in list(query):
-                r_list.append(s)
+            medio = Medio.select().where(Medio.Id == id_medio).get()
+
+            s_list = list(Seccion.select().where(Seccion.Medio == medio).order_by(Seccion.Descripcion))
 
         except Exception as e:
-            raise Exception(f'Error al obtener secciones: {str(e)}') from e
+            raise Exception(f'Error al obtener secciones (model): {str(e)}') from e
 
         finally:
             cm_pw_db.close()
 
-        return r_list
+        return s_list
 
     def get_noticia(self, search_id):
         """
         devuelve un registro según search_id
         si lo encuentra
         """
+        if not cm_pw_db.is_closed():
+            cm_pw_db.close()
 
         try:
-            db_cacho = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="",
-                database="carro_maier"
-            )
+            cm_pw_db.connect()
 
-            csr_cacho = db_cacho.cursor()
-            sql_get = """
-                SELECT
-                    N.Id
-                    , DATE_FORMAT(N.Fecha, '%d/%m/%Y') AS Fecha
-                    , CONCAT(M.Descripcion, ' - (', M.Id, ')') AS Medio
-                    , CONCAT(S.Descripcion, ' - (', S.Id, ')') AS Seccion
-                    , N.Titulo
-                    , N.Cuerpo
-                FROM Noticias N
-                JOIN Medios M ON
-                    N.IdMedio = M.Id
-                JOIN Secciones S ON
-                    N.IdSeccion = S.Id
-                WHERE N.Id = %s
-                """
-
-            csr_cacho.execute(sql_get, (search_id, ))
-            resultado = csr_cacho.fetchone()
-
-            return resultado
+            noticia = Noticia.select().where(Noticia.Id == search_id).get()
 
         except Exception as e:
-            raise Exception(f"error al leer registros en tabla Noticias: {str(e)}") from e
+            raise Exception(f'Error al obtener noticia (model): {str(e)}') from e
 
         finally:
-            db_cacho.close()
+            cm_pw_db.close()
+
+        return noticia
 
     def get_noticias(self):
         """
@@ -187,92 +198,57 @@ class CmpModel:
         de la tabla noticias
         ordenados por fecha
         """
+        if not cm_pw_db.is_closed():
+            cm_pw_db.close()
+
         try:
-            db_cacho = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="",
-                database="carro_maier"
-            )
+            cm_pw_db.connect()
 
-            csr_cacho = db_cacho.cursor()
+            noticias = Noticia.select()
 
-            sql_get = """
-                SELECT
-                    CAST(N.Id AS CHAR) AS Id
-                    , DATE_FORMAT(N.Fecha, '%d/%m/%Y') AS Fecha
-                    , M.Descripcion AS Medio
-                    , S.Descripcion AS Seccion
-                    , N.Titulo
-                    , N.Cuerpo
-                FROM Noticias N
-                JOIN Medios M ON
-                    N.IdMedio = M.Id
-                JOIN Secciones S ON
-                    N.IdSeccion = S.Id
-                ORDER BY N.Fecha DESC
-                """
+            cm_pw_db.close()
 
-            csr_cacho.execute(sql_get)
-            resultado = csr_cacho.fetchall()
-
-            db_cacho.close()
-
-            return resultado
+            return noticias
 
         except Exception as e:
-            raise Exception(f'Error al obtener noticias: {str(e)}') from e
+            raise Exception(f'Error al obtener noticias (model): {str(e)}') from e
 
         finally:
-            db_cacho.close()
+            cm_pw_db.close()
 
     def save_data(self, noticia):
         """
         guarda una noticia
         """
 
+        titulo = re.sub("[\"']", r"", noticia[constants.TITULO])
+        cuerpo = re.sub("[\"']", r"", noticia[constants.CUERPO])
+
         try:
-            db_cacho = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="",
-                database="carro_maier"
-                )
+            cm_pw_db.connect()
 
-            csr_cacho = db_cacho.cursor()
+            medio = Medio.select().where(Medio.Id == noticia[constants.ID_MEDIO]).get()
+            seccion = Seccion.select().where(Seccion.Id == noticia[constants.ID_SECCION]).get()
 
-            titulo = re.sub("[\"']", r"", noticia.titulo)
-            cuerpo = re.sub("[\"']", r"", noticia.cuerpo)
+            if noticia[constants.ID_NOTICIA] == 0:
+                Noticia.create(Fecha = noticia[constants.FECHA], Medio = medio, Seccion = seccion, Titulo = titulo, Cuerpo = cuerpo)
 
-            if noticia.id == 0:
-                sql_insert = """
-                    INSERT INTO Noticias (Fecha, IdMedio, IdSeccion, Titulo, Cuerpo)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """
-                datos = (noticia.fecha, noticia.id_medio, noticia.id_seccion, titulo, cuerpo)
-
-                csr_cacho.execute(sql_insert, datos)
             else:
-                sql_update = """
-                    UPDATE Noticias SET
-                        Fecha = %s,
-                        IdMedio = %s,
-                        IdSeccion = %s,
-                        Titulo = %s,
-                        Cuerpo = %s
-                    WHERE Id = %s
-                    """
+                noticia = Noticia.select(Noticia.Id == noticia[constants.ID_NOTICIA]).get()
 
-                csr_cacho.execute(sql_update, (noticia.fecha, noticia.id_medio, noticia.id_seccion, titulo, cuerpo, noticia.id))
+                noticia.Fecha = noticia[constants.FECHA]
+                noticia.Medio = medio
+                noticia.Seccion = seccion
+                noticia.Titulo = titulo
+                noticia.Cuerpo = cuerpo
 
-            db_cacho.commit()
+                noticia.save()
 
         except Exception as e:
-            db_cacho.rollback()
-            raise Exception(f"error al {'insertar' if noticia.id == 0 else 'actualizar'} registro en tabla Noticias: {str(e)}") from e
+            raise Exception(f'Error al guardar noticia (model): {str(e)}') from e
 
         finally:
-            db_cacho.close()
+            cm_pw_db.close()
 
     def delete_data(self, search_id):
         """
@@ -280,24 +256,14 @@ class CmpModel:
         si lo encuentra
         """
         try:
-            db_cacho = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="",
-                database="carro_maier"
-            )
+            cm_pw_db.connect()
 
-            csr_cacho = db_cacho.cursor()
-            sql_delete = """
-                DELETE FROM Noticias
-                WHERE Id = %s
-                """
-            csr_cacho.execute(sql_delete, (search_id, ))
-            db_cacho.commit()
+            noticia = Noticia.select(Noticia.Id == search_id).get()
+
+            noticia.delete_instance()
 
         except Exception as e:
-            db_cacho.rollback()
-            raise Exception(f"error al eliminar registro en tabla Noticias: {str(e)}") from e
+            raise Exception(f'Error al eliminar noticia (model): {str(e)}') from e
 
         finally:
-            db_cacho.close()
+            cm_pw_db.close()

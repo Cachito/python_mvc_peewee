@@ -3,6 +3,8 @@ Módulo controller.py
 """
 import datetime
 import traceback
+from modulos.clases import *
+import modulos.constant as constants
 
 class Controller:
     """
@@ -19,26 +21,26 @@ class Controller:
         """
         try:
             self.model.create_db()
-            self.view.salta_violeta("Carro-Maier", "Base de datos carro_maier_peewee creada con éxito")
+            self.model.create_tables()
+            self.view.salta_violeta("Carro-Maier", "Base de datos carro_maier_peewee y tablas creados con éxito")
 
         except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar base: {str(e)}")
+            self.view.salta_violeta("Error Carro-Maier", f"error al crear base o tablas (controller): {str(e)}")
 
-    def create_tables(self):
+    def populate_tables(self):
         """
-        crea las tablas
-        - noticias
+        inserta registros en las tablas
         - medios
         - secciones
         """
         try:
-            self.model.create_tables()
+            self.model.populate_tables()
             self.view.salta_violeta(
-                "Carro-Maier", "Tablas `Noticias`, `Medios` y `Secciones` creadas con éxito.")
+                "Carro-Maier", "Registros insertados con éxito en tablas `Medios` y `Secciones`.")
 
         except Exception as e:
             self.view.salta_violeta(
-                "Error Carro-Maier", f"error al intentar crear tablas: {str(e)}")
+                "Error Carro-Maier", f"error al insertar registros (controller): {str(e)}")
 
     def get_medios(self):
         """
@@ -50,7 +52,7 @@ class Controller:
 
         except Exception as e:
             self.view.salta_violeta(
-                "Error Carro-Maier", f"error al intentar obtener medios: {str(e)}")
+                "Error Carro-Maier", f"error al intentar obtener medios (controller): {str(e)}")
 
     def get_secciones(self, id_medio):
         """
@@ -61,7 +63,7 @@ class Controller:
             return self.model.get_secciones(id_medio)
 
         except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener secciones: {str(e)}")
+            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener secciones (controller): {str(e)}")
 
     def get_noticia(self, search_id):
         """
@@ -79,17 +81,28 @@ class Controller:
             self.view.set_noticia(noticia)
 
         except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener noticia: {str(e)}")
+            self.view.salta_violeta("Error Carro-Maier", f"error al obtener noticia (controller): {str(e)}")
 
     def get_noticias(self):
         """
         devuelve todas las noticias
         """
+        noticias = []
+
         try:
-            return self.model.get_noticias()
+            data = self.model.get_noticias()
+            for n in data:
+                fecha = n.Fecha.strftime("%Y-%m-%d")
+                id_nota = str(n.Id)
+                id_medio = str(n.Medio.Id)
+                id_seccion = str(n.Seccion.Id)
+                n_dto = id_nota, fecha, n.Medio.Descripcion, n.Seccion.Descripcion, n.Titulo, n.Cuerpo, id_medio, id_seccion
+                noticias.append(n_dto)
+
+            return noticias
 
         except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar obtener noticias: {str(e)}")
+            self.view.salta_violeta("Error Carro-Maier", f"error al obtener noticias (controller): {str(e)}")
 
     def save_data(self, noticia):
         """
@@ -102,13 +115,13 @@ class Controller:
         try:
             if self.valida(noticia):
                 self.model.save_data(noticia)
-                self.view.salta_violeta("Carro-Maier", f"registro {'insertado' if noticia.id == 0 else f'{noticia.id} actualizado'} con éxito")
+                self.view.salta_violeta("Carro-Maier", f"registro {'insertado' if noticia.id_nota == 0 else f'{noticia.id_nota} actualizado'} con éxito")
                 self.view.refresh()
                 self.view.clear_data()
 
         except Exception as e:
             traceback.print_exc()
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar guardar noticia: {str(e)}")
+            self.view.salta_violeta("Error Carro-Maier", f"error al guardar noticia (controller): {str(e)}")
 
     def delete_data(self, search_id):
         """
@@ -129,7 +142,7 @@ class Controller:
             self.view.clear_data()
 
         except Exception as e:
-            self.view.salta_violeta("Error Carro-Maier", f"error al intentar eliminar noticia: {str(e)}")
+            self.view.salta_violeta("Error Carro-Maier", f"error al eliminar noticia (controller): {str(e)}")
 
     def valida(self, noticia):
         """
@@ -140,24 +153,24 @@ class Controller:
         """
         msj_error = ""
 
-        if not noticia.fecha:
+        if not noticia[constants.FECHA]:
             msj_error = " fecha "
         else:
             try:
-                datetime.datetime.strptime(noticia.fecha, '%Y-%m-%d')
+                datetime.datetime.strptime(noticia[constants.FECHA], '%Y-%m-%d')
             except ValueError:
                 msj_error = " el formato de la fecha debe ser YYYY-MM-dd"
 
-        if not noticia.id_medio or noticia.id_medio == 0:
+        if not noticia[constants.ID_MEDIO] or noticia[constants.ID_MEDIO] == 0:
             msj_error = f"{msj_error} medio "
 
-        if not noticia.id_seccion or noticia.id_seccion == 0:
+        if not noticia[constants.ID_SECCION] or noticia[constants.ID_SECCION] == 0:
             msj_error = f"{msj_error} seccion "
 
-        if not noticia.titulo:
+        if not noticia[constants.TITULO]:
             msj_error = f"{msj_error} título "
 
-        if not noticia.cuerpo:
+        if not noticia[constants.CUERPO]:
             msj_error = f"{msj_error} cuerpo "
 
         if msj_error:
