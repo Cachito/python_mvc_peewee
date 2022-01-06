@@ -210,12 +210,6 @@ class Ui_main_view(object):
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.tw_noticias.setHorizontalHeaderItem(5, item)
-        #item = QtWidgets.QTableWidgetItem()
-        #item.setTextAlignment(QtCore.Qt.AlignCenter)
-        #self.tw_noticias.setHorizontalHeaderItem(6, item)
-        #self.tw_noticias.setColumnHidden(6, True)
-        #item = QtWidgets.QTableWidgetItem()
-        #item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.tw_noticias.setHorizontalHeaderItem(7, item)
         self.tw_noticias.setColumnHidden(7, True)
         self.tw_noticias.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
@@ -281,10 +275,6 @@ class Ui_main_view(object):
         item.setText(_translate("main_view", "Título"))
         item = self.tw_noticias.horizontalHeaderItem(5)
         item.setText(_translate("main_view", "Cuerpo"))
-        #item = self.tw_noticias.horizontalHeaderItem(6)
-        #item.setText(_translate("main_view", "IdMedio"))
-        #item = self.tw_noticias.horizontalHeaderItem(7)
-        #item.setText(_translate("main_view", "IdSeccion"))
         self.menuArchivo.setTitle(_translate("main_view", "Archivo"))
         self.actionAcerca_de.setText(_translate("main_view", "Acerca de..."))
         self.salir.setText(_translate("main_view", "Salir"))
@@ -376,7 +366,7 @@ class Ui_main_view(object):
         try:
             medios = self.controller.get_medios()
             for m in medios:
-                self.cmb_medios.addItem(f"{m.Descripcion} - ({m.Id})")
+                self.cmb_medios.addItem(str(m))
 
         except Exception as e:
             self.salta_violeta("Patrón MVC + PyQt5", \
@@ -403,7 +393,7 @@ class Ui_main_view(object):
             secciones = self.controller.get_secciones(id_medio)
 
             for s in secciones:
-                self.cmb_secciones.addItem(f"{s.Descripcion} - ({s.Id})")
+                self.cmb_secciones.addItem(str(s))
 
         except Exception as e:
             self.salta_violeta("Patrón MVC + PyQt5", \
