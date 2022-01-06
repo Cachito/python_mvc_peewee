@@ -78,7 +78,11 @@ class Controller:
 
         try:
             noticia = self.model.get_noticia(search_id)
-            self.view.set_noticia(noticia)
+            data = noticia.Id, noticia.Fecha, f'{noticia.Medio.Descripcion} - ({noticia.Medio.Id})', \
+                f'{noticia.Seccion.Descripcion} - ({noticia.Seccion.Id})', noticia.Titulo, noticia.Cuerpo, \
+                noticia.Medio.Id, noticia.Seccion.Id
+
+            self.view.set_noticia(data)
 
         except Exception as e:
             self.view.salta_violeta("Error Carro-Maier", f"error al obtener noticia (controller): {str(e)}")
@@ -115,7 +119,8 @@ class Controller:
         try:
             if self.valida(noticia):
                 self.model.save_data(noticia)
-                self.view.salta_violeta("Carro-Maier", f"registro {'insertado' if noticia.id_nota == 0 else f'{noticia.id_nota} actualizado'} con éxito")
+                self.view.salta_violeta("Carro-Maier", \
+                    f"registro {'insertado' if noticia[constants.ID_NOTICIA] == 0 else f'{noticia[constants.ID_NOTICIA]} actualizado'} con éxito")
                 self.view.refresh()
                 self.view.clear_data()
 

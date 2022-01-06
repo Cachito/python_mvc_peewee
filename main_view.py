@@ -22,8 +22,8 @@ class Ui_main_view(object):
     """
     def setupUi(self, main_view):
         self.nota_id = 0
-        self.medio_id = 0
-        self.seccion_id = 0
+        #self.medio_id = 0
+        #self.seccion_id = 0
 
         main_view.setObjectName("main_view")
         main_view.resize(500, 641)
@@ -190,7 +190,7 @@ class Ui_main_view(object):
         self.tw_noticias = QtWidgets.QTableWidget(self.centralwidget)
         self.tw_noticias.setGeometry(QtCore.QRect(10, 420, 481, 182))
         self.tw_noticias.setObjectName("tw_noticias")
-        self.tw_noticias.setColumnCount(8)
+        self.tw_noticias.setColumnCount(6)
         self.tw_noticias.setRowCount(0)
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
@@ -210,12 +210,12 @@ class Ui_main_view(object):
         item = QtWidgets.QTableWidgetItem()
         item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.tw_noticias.setHorizontalHeaderItem(5, item)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
-        self.tw_noticias.setHorizontalHeaderItem(6, item)
-        self.tw_noticias.setColumnHidden(6, True)
-        item = QtWidgets.QTableWidgetItem()
-        item.setTextAlignment(QtCore.Qt.AlignCenter)
+        #item = QtWidgets.QTableWidgetItem()
+        #item.setTextAlignment(QtCore.Qt.AlignCenter)
+        #self.tw_noticias.setHorizontalHeaderItem(6, item)
+        #self.tw_noticias.setColumnHidden(6, True)
+        #item = QtWidgets.QTableWidgetItem()
+        #item.setTextAlignment(QtCore.Qt.AlignCenter)
         self.tw_noticias.setHorizontalHeaderItem(7, item)
         self.tw_noticias.setColumnHidden(7, True)
         self.tw_noticias.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
@@ -281,10 +281,10 @@ class Ui_main_view(object):
         item.setText(_translate("main_view", "Título"))
         item = self.tw_noticias.horizontalHeaderItem(5)
         item.setText(_translate("main_view", "Cuerpo"))
-        item = self.tw_noticias.horizontalHeaderItem(6)
-        item.setText(_translate("main_view", "IdMedio"))
-        item = self.tw_noticias.horizontalHeaderItem(7)
-        item.setText(_translate("main_view", "IdSeccion"))
+        #item = self.tw_noticias.horizontalHeaderItem(6)
+        #item.setText(_translate("main_view", "IdMedio"))
+        #item = self.tw_noticias.horizontalHeaderItem(7)
+        #item.setText(_translate("main_view", "IdSeccion"))
         self.menuArchivo.setTitle(_translate("main_view", "Archivo"))
         self.actionAcerca_de.setText(_translate("main_view", "Acerca de..."))
         self.salir.setText(_translate("main_view", "Salir"))
@@ -307,7 +307,7 @@ class Ui_main_view(object):
         """
         botón crear base evento click
         """
-        self.show_status("Creando base de datos. Por favor espere...")
+        self.show_status("Creando base de datos y tablas. Por favor espere...")
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
         self.controller.create_db()
@@ -347,8 +347,8 @@ class Ui_main_view(object):
         limpia la pantalla
         """
         self.nota_id = 0
-        self.medio_id = 0
-        self.seccion_id = 0
+        #self.medio_id = 0
+        #self.seccion_id = 0
         date = QDate.currentDate()
         self.de_fecha.setDate(date)
         self.cmb_medios.setCurrentIndex(0)
@@ -379,7 +379,8 @@ class Ui_main_view(object):
                 self.cmb_medios.addItem(f"{m.Descripcion} - ({m.Id})")
 
         except Exception as e:
-            self.salta_violeta("Patrón MVC + PyQt5", f"Error al cargar medios (main_view): {str(e)}")
+            self.salta_violeta("Patrón MVC + PyQt5", \
+                f"Error al cargar medios (main_view): {str(e)}")
 
     def load_secciones(self):
         """
@@ -390,6 +391,10 @@ class Ui_main_view(object):
             self.cmb_secciones.clear()
 
             medio = self.cmb_medios.currentText()
+
+            if not medio or medio.isspace():
+                return
+
             inicio = medio.find('- (') + 3
             fin = medio.find(')')
 
@@ -401,7 +406,8 @@ class Ui_main_view(object):
                 self.cmb_secciones.addItem(f"{s.Descripcion} - ({s.Id})")
 
         except Exception as e:
-            self.salta_violeta("Patrón MVC + PyQt5", f"Error al cargar secciones (main_view): {str(e)}")
+            self.salta_violeta("Patrón MVC + PyQt5", \
+                f"Error al cargar secciones (main_view): {str(e)}")
 
     def set_noticia(self, noticia):
         """
@@ -410,13 +416,12 @@ class Ui_main_view(object):
         self.clear_data()
 
         self.nota_id = noticia[constants.ID_NOTICIA]
-        self.medio_id = noticia[constants.ID_MEDIO]
-        self.seccion_id = noticia[constants.ID_SECCION]
-        qdate = QtCore.QDate.fromString(noticia[constants.FECHA], "dd/MM/yyyy")
-        self.de_fecha.setDate(qdate)
+        #self.medio_id = noticia[constants.ID_MEDIO]
+        #self.seccion_id = noticia[constants.ID_SECCION]
+        self.de_fecha.setDate(noticia[constants.FECHA])
         self.de_fecha.show()
-        self.cmb_medios.setCurrentText(noticia[constants.ID_MEDIO])
-        self.cmb_secciones.setCurrentText(noticia[constants.ID_SECCION])
+        self.cmb_medios.setCurrentText(noticia[constants.MEDIO])
+        self.cmb_secciones.setCurrentText(noticia[constants.SECCION])
         self.txt_titulo.setText(noticia[constants.TITULO])
         self.txt_cuerpo.setText(noticia[constants.CUERPO])
 
@@ -445,7 +450,7 @@ class Ui_main_view(object):
 
         cuerpo = self.txt_cuerpo.toPlainText()
 
-        noti = self.nota_id, fecha, id_medio, id_seccion, titulo, cuerpo
+        noti = self.nota_id, fecha, '', '', titulo, cuerpo, id_medio, id_seccion
 
         self.controller.save_data(noti)
 
@@ -464,13 +469,9 @@ class Ui_main_view(object):
             row = 0
             self.tw_noticias.setRowCount(len(noticias))
 
-            cols = 7
+            cols = 6
             for n in noticias:
-                for col in range(0, cols + 1):
-                    #item = QtWidgets.QTableWidgetItem(n[col])
-                    #if(col < 2):
-                    #    item.setTextAlignment(QtCore.Qt.AlignRight) # esto no funciona
-#
+                for col in range(0, cols):
                     self.tw_noticias.setItem(row, col, QtWidgets.QTableWidgetItem(n[col]))
 
                 row += 1

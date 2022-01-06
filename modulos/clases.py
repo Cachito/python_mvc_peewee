@@ -43,8 +43,6 @@ class Seccion(MySQLModel):
         table_name = "Secciones"
 
     Id = IntegerField(primary_key=True, unique=True)
-    #IdMedio = ForeignKeyField(Medio, backref='Medios', field="IdMedio", to_field="Id")
-    #IdMedio = ForeignKeyField(column_name = "IdMedio", model = Medio)
     Medio = ForeignKeyField(Medio, backref = 'Medios')
     Descripcion = FixedCharField(max_length=128)
 
@@ -61,11 +59,7 @@ class Noticia(MySQLModel):
 
     Id =  IntegerField(primary_key=True, unique=True, constraints=[SQL('AUTO_INCREMENT')]) #PrimaryKeyField()
     Fecha = DateField()
-    #IdMedio = ForeignKeyField(Medio, backref='Medios', field="IdMedio", to_field="Id")
-    #IdMedio = ForeignKeyField(column_name = "IdMedio", model = Medio)
     Medio = ForeignKeyField(Medio, backref = 'Medios')
-    #IdSeccion = ForeignKeyField(Seccion, backref='Secciones', field="IdSeccion", to_field="Id")
-    #IdSeccion = ForeignKeyField(column_name = "IdSeccion", model = Seccion)
     Seccion = ForeignKeyField(Seccion, backref = 'Secciones')
     Titulo = FixedCharField(max_length=128)
     Cuerpo = CharField()

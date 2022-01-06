@@ -94,6 +94,9 @@ class CmpModel:
         """
         intenta obtener un medio
         """
+        if not cm_pw_db.is_closed():
+            cm_pw_db.close()
+
         cm_pw_db.connect()
         medio = Medio()
 
@@ -112,6 +115,9 @@ class CmpModel:
         """
         intenta obtener una seccion
         """
+        if not cm_pw_db.is_closed():
+            cm_pw_db.close()
+
         cm_pw_db.connect()
         seccion = Seccion()
 
@@ -135,6 +141,9 @@ class CmpModel:
         m_list = []
 
         try:
+            if not cm_pw_db.is_closed():
+                cm_pw_db.close()
+
             cm_pw_db.connect()
 
             m_list = list(Medio.select().order_by(Medio.Descripcion))
@@ -157,6 +166,9 @@ class CmpModel:
         s_list = []
 
         try:
+            if not cm_pw_db.is_closed():
+                cm_pw_db.close()
+
             cm_pw_db.connect()
 
             medio = Medio.select().where(Medio.Id == id_medio).get()
@@ -176,13 +188,18 @@ class CmpModel:
         devuelve un registro según search_id
         si lo encuentra
         """
-        if not cm_pw_db.is_closed():
-            cm_pw_db.close()
-
         try:
+            if not cm_pw_db.is_closed():
+                cm_pw_db.close()
+
             cm_pw_db.connect()
 
             noticia = Noticia.select().where(Noticia.Id == search_id).get()
+
+            cm_pw_db.close()
+
+        except peewee.DoesNotExist:
+            raise Exception(f'La noticia id {search_id} no existe (model)')
 
         except Exception as e:
             raise Exception(f'Error al obtener noticia (model): {str(e)}') from e
@@ -198,10 +215,10 @@ class CmpModel:
         de la tabla noticias
         ordenados por fecha
         """
-        if not cm_pw_db.is_closed():
-            cm_pw_db.close()
-
         try:
+            if not cm_pw_db.is_closed():
+                cm_pw_db.close()
+
             cm_pw_db.connect()
 
             noticias = Noticia.select()
@@ -225,24 +242,30 @@ class CmpModel:
         cuerpo = re.sub("[\"']", r"", noticia[constants.CUERPO])
 
         try:
+            if not cm_pw_db.is_closed():
+                cm_pw_db.close()
+
             cm_pw_db.connect()
 
             medio = Medio.select().where(Medio.Id == noticia[constants.ID_MEDIO]).get()
             seccion = Seccion.select().where(Seccion.Id == noticia[constants.ID_SECCION]).get()
 
-            if noticia[constants.ID_NOTICIA] == 0:
-                Noticia.create(Fecha = noticia[constants.FECHA], Medio = medio, Seccion = seccion, Titulo = titulo, Cuerpo = cuerpo)
+            if noticia[constants.ID_NOTICIA] == 0: \
+                Noticia.create(Fecha = noticia[constants.FECHA], Medio = medio, Seccion = seccion, \
+                Titulo = titulo, Cuerpo = cuerpo)
 
             else:
-                noticia = Noticia.select(Noticia.Id == noticia[constants.ID_NOTICIA]).get()
+                noticia_data = Noticia.select().where(Noticia.Id == noticia[constants.ID_NOTICIA]).get()
 
-                noticia.Fecha = noticia[constants.FECHA]
-                noticia.Medio = medio
-                noticia.Seccion = seccion
-                noticia.Titulo = titulo
-                noticia.Cuerpo = cuerpo
+                noticia_data.Fecha = noticia[constants.FECHA]
+                noticia_data.Medio = medio
+                noticia_data.Seccion = seccion
+                noticia_data.Titulo = titulo
+                noticia_data.Cuerpo = cuerpo
 
-                noticia.save()
+                noticia_data.save()
+
+            cm_pw_db.close()
 
         except Exception as e:
             raise Exception(f'Error al guardar noticia (model): {str(e)}') from e
@@ -256,11 +279,21 @@ class CmpModel:
         si lo encuentra
         """
         try:
+            if not cm_pw_db.is_closed():
+                cm_pw_db.close()
+
             cm_pw_db.connect()
 
-            noticia = Noticia.select(Noticia.Id == search_id).get()
+            query = Noticia.delete().where (Noticia.Id == search_id)
+            query.execute()
 
-            noticia.delete_instance()
+            #noticia = Noticia.select(Noticia.Id == search_id).get()
+            #noticia.delete_instance()
+
+            cm_pw_db.close()
+
+        except peewee.DoesNotExist:
+            raise Exception(f'La noticia id {search_id} no existe (model)')
 
         except Exception as e:
             raise Exception(f'Error al eliminar noticia (model): {str(e)}') from e
