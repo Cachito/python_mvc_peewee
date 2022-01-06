@@ -30,6 +30,8 @@ class Medio(MySQLModel):
     Id = IntegerField(primary_key=True, unique=True)
     Descripcion = FixedCharField(max_length=128)
 
+    def __str__(self):
+        return f'{self.Descripcion} - ({self.Id})'
 class Seccion(MySQLModel):
     """
     representa una sección/suplemento
@@ -46,6 +48,8 @@ class Seccion(MySQLModel):
     Medio = ForeignKeyField(Medio, backref = 'Medios')
     Descripcion = FixedCharField(max_length=128)
 
+    def __str__(self):
+        return f'{self.Descripcion} - ({self.Id})'
 class Noticia(MySQLModel):
     """
     representa una Noticia.
@@ -62,15 +66,4 @@ class Noticia(MySQLModel):
     Medio = ForeignKeyField(Medio, backref = 'Medios')
     Seccion = ForeignKeyField(Seccion, backref = 'Secciones')
     Titulo = FixedCharField(max_length=128)
-    Cuerpo = CharField()
-
-class NoticiaDto:
-    def __init__(self, id_nota, fecha, id_medio, id_seccion, titulo, cuerpo, medio, seccion):
-        self.id_nota = id_nota
-        self.fecha = fecha
-        self.id_medio = id_medio
-        self.id_seccion = id_seccion
-        self.titulo = titulo
-        self.cuerpo = cuerpo
-        self.medio = medio
-        self.seccion = seccion
+    Cuerpo = TextField()
